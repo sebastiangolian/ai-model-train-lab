@@ -3,7 +3,7 @@ VENV          ?= .venv
 PY            := $(VENV)/bin/python
 
 MODEL         ?= bdh
-MODELS        := $(patsubst models/%/model.mk,%,$(wildcard models/*/model.mk))
+MODELS        := $(patsubst models/%/spec.py,%,$(wildcard models/*/spec.py))
 
 DEVICE        ?= auto
 ITERS         ?=
@@ -20,7 +20,7 @@ include models/$(MODEL)/model.mk
 
 TRAIN_ARGS    := --preset $(PRESET) --device $(DEVICE) $(if $(ITERS),--iters $(ITERS))
 
-.PHONY: help models all setup venv model-setup train sample export web test clean distclean
+.PHONY: help models all setup venv model-setup train sample export compare web test clean distclean
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -42,21 +42,24 @@ $(PY): requirements.txt
 	@touch $(PY)
 
 train: setup ## Train MODEL/PRESET -> runs/MODEL/PRESET/
-	$(PY) -m models.$(MODEL).train $(TRAIN_ARGS)
+	$(PY) -m lab.train --model $(MODEL) $(TRAIN_ARGS)
 
 sample: setup ## Generate text from runs/MODEL/PRESET/checkpoint.pt
-	$(PY) -m models.$(MODEL).sample --preset $(PRESET) --device $(DEVICE) \
+	$(PY) -m lab.sample --model $(MODEL) --preset $(PRESET) --device $(DEVICE) \
 		--prompt "$$(printf '$(PROMPT)')" --tokens $(TOKENS) --temperature $(TEMP) --top-k $(TOPK) --num-samples $(SAMPLES)
 
 export: setup ## Export runs/MODEL/PRESET/checkpoint.pt to web/MODEL/model/ for the browser demo
-	$(PY) -m models.$(MODEL).export --preset $(PRESET)
+	$(PY) -m lab.export --model $(MODEL) --preset $(PRESET)
+
+compare: venv ## Compare all runs: val loss, steps, training time
+	$(PY) -m lab.compare
 
 web: ## Serve the browser demos on http://localhost:PORT
 	@echo "Open http://localhost:$(PORT)"
 	$(PYTHON) -m http.server $(PORT) --directory web
 
-test: setup ## Run tests for MODEL (CPU smoke tests, JS/PyTorch parity)
-	$(PY) -m pytest -q tests/$(MODEL)
+test: setup ## Run shared tests + tests for MODEL (CPU smoke, JS/PyTorch parity)
+	$(PY) -m pytest -q tests/test_lab.py tests/$(MODEL)
 
 clean: ## Remove training runs of MODEL
 	rm -rf runs/$(MODEL)

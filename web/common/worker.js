@@ -1,9 +1,11 @@
-// Runs the model off the main thread and streams generated text + neuron activity to the page.
-import { loadModel, sampleToken } from "./bdh.js";
+// Runs a model core off the main thread and streams generated text, stats and visualisation frames.
+// The core module (e.g. ../bdh/bdh.js) exports loadModel(manifest, buffer) -> model with
+// describe() and newState(); a state has step(token) -> logits, position, stats() and viz().
+import { sampleToken } from "./sampling.js";
 
 let model = null;
 let stopRequested = false;
-const FRAME_MS = 80; // how often to push tokens/activity to the UI
+const FRAME_MS = 80; // how often to push tokens/visualisation to the UI
 
 const yieldToEvents = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -30,18 +32,8 @@ async function fetchWithProgress(url) {
   return bytes.buffer;
 }
 
-// One byte per neuron (0-255, scaled per layer) so a frame stays small.
-function neuronFrame(state) {
-  return state.neurons.map((layer) => {
-    let max = 0;
-    for (let i = 0; i < layer.length; i++) if (layer[i] > max) max = layer[i];
-    const out = new Uint8Array(layer.length);
-    if (max > 0) for (let i = 0; i < layer.length; i++) out[i] = Math.round((255 * layer[i]) / max);
-    return out;
-  });
-}
-
-async function load(base) {
+async function load({ core, base }) {
+  const { loadModel } = await import(core);
   const manifest = await (await fetch(`${base}model.json`)).json();
   const buffer = await fetchWithProgress(`${base}weights.bin`);
   model = loadModel(manifest, buffer);
@@ -49,14 +41,17 @@ async function load(base) {
     type: "ready",
     meta: {
       params: manifest.params,
-      config: manifest.config,
       step: manifest.step,
       valLoss: manifest.val_loss,
-      preset: manifest.preset,
-      neuronsPerHead: model.N,
-      stateBytes: model.stateBytes,
+      trainSeconds: manifest.train_seconds,
+      device: manifest.device,
+      describe: model.describe(),
     },
   });
+}
+
+function transferables(viz) {
+  return [...(viz.layers || []), ...(viz.rows || []), ...(viz.mean ? [viz.mean] : [])].map((a) => a.buffer);
 }
 
 async function generate({ prompt, maxTokens, temperature, topK }) {
@@ -80,7 +75,7 @@ async function generate({ prompt, maxTokens, temperature, topK }) {
   const flush = (final) => {
     const text = decoder.decode(new Uint8Array(pending), { stream: !final });
     pending = [];
-    const frame = neuronFrame(state);
+    const viz = state.viz();
     postMessage(
       {
         type: "tokens",
@@ -88,10 +83,10 @@ async function generate({ prompt, maxTokens, temperature, topK }) {
         generated,
         position: state.position,
         tokensPerSecond: generated / ((performance.now() - started) / 1000),
-        activity: state.activity.map((a) => ({ ...a })),
-        neurons: frame,
+        stats: state.stats(),
+        viz,
       },
-      frame.map((f) => f.buffer),
+      transferables(viz),
     );
   };
 
@@ -112,7 +107,7 @@ async function generate({ prompt, maxTokens, temperature, topK }) {
 
 onmessage = async ({ data }) => {
   try {
-    if (data.type === "load") await load(data.base);
+    if (data.type === "load") await load(data);
     else if (data.type === "generate") await generate(data);
     else if (data.type === "stop") stopRequested = true;
   } catch (error) {

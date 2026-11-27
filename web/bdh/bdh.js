@@ -6,47 +6,13 @@
 // So generation needs O(1) memory per token instead of a growing KV cache, and because q is a
 // sparse non-negative vector, both reading and updating S only touch the active neurons.
 // Runs in browsers (Web Worker) and in Node (parity test).
+import { formatBytes, layerNorm, readTensors, toBytes } from "../common/tensors.js";
 
-const LN_EPS = 1e-5;
 const TWO_PI = 2 * Math.PI;
-
-const HALF_TO_FLOAT = (() => {
-  const table = new Float32Array(65536);
-  for (let h = 0; h < 65536; h++) {
-    const sign = h & 0x8000 ? -1 : 1;
-    const exp = (h >> 10) & 0x1f;
-    const mant = h & 0x3ff;
-    if (exp === 0) table[h] = sign * mant * 2 ** -24;
-    else if (exp === 31) table[h] = mant ? NaN : sign * Infinity;
-    else table[h] = sign * (1 + mant / 1024) * 2 ** (exp - 15);
-  }
-  return table;
-})();
-
-function readTensor(buffer, { dtype, shape, offset }) {
-  const count = shape.reduce((a, b) => a * b, 1);
-  if (dtype === "float32") return new Float32Array(buffer.slice(offset, offset + count * 4));
-  const half = new Uint16Array(buffer, offset, count);
-  const out = new Float32Array(count);
-  for (let i = 0; i < count; i++) out[i] = HALF_TO_FLOAT[half[i]];
-  return out;
-}
 
 /** Build a model from model.json (parsed) and weights.bin (ArrayBuffer). */
 export function loadModel(manifest, buffer) {
-  const weights = {};
-  for (const [name, spec] of Object.entries(manifest.tensors)) weights[name] = readTensor(buffer, spec);
-  return new BDHModel(manifest.config, weights);
-}
-
-function layerNorm(v) {
-  let mean = 0;
-  for (let i = 0; i < v.length; i++) mean += v[i];
-  mean /= v.length;
-  let variance = 0;
-  for (let i = 0; i < v.length; i++) variance += (v[i] - mean) ** 2;
-  const inv = 1 / Math.sqrt(variance / v.length + LN_EPS);
-  for (let i = 0; i < v.length; i++) v[i] = (v[i] - mean) * inv;
+  return new BDHModel(manifest.config, readTensors(manifest, buffer));
 }
 
 // out[n] = relu(sum_d x[d] * W[base + d*N + n]) for a (D x N) slice of W; returns active count.
@@ -85,6 +51,10 @@ export class BDHModel {
   /** Bytes of synaptic state, constant no matter how long the context gets. */
   get stateBytes() {
     return this.L * this.H * this.N * this.D * 4;
+  }
+
+  describe() {
+    return `${this.L} layers · ${this.H} heads × ${this.N} neurons · fixed synaptic state of ${formatBytes(this.stateBytes)}`;
   }
 
   newState() {
@@ -186,25 +156,21 @@ export class BDHState {
     this.position++;
     return logits;
   }
-}
 
-/** Sample a token id; temperature 0 means greedy. */
-export function sampleToken(logits, { temperature = 0.8, topK = 20 } = {}, random = Math.random) {
-  const V = logits.length;
-  if (temperature <= 0) {
-    let best = 0;
-    for (let v = 1; v < V; v++) if (logits[v] > logits[best]) best = v;
-    return best;
+  stats() {
+    const firing = this.activity.reduce((s, a) => s + a.x, 0) / this.activity.length;
+    return [
+      { label: "Synaptic state", value: formatBytes(this.model.stateBytes), title: "Fixed size, independent of context length" },
+      { label: "Firing (x > 0)", value: `${(firing * 100).toFixed(1)}%`, title: "Share of neurons active after ReLU, averaged over layers" },
+    ];
   }
-  const order = Array.from({ length: V }, (_, v) => v).sort((a, b) => logits[b] - logits[a]);
-  const k = Math.min(Math.max(1, topK || V), V);
-  const top = order.slice(0, k);
-  const max = logits[top[0]];
-  const weights = top.map((v) => Math.exp((logits[v] - max) / temperature));
-  let r = random() * weights.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < k; i++) {
-    r -= weights[i];
-    if (r <= 0) return top[i];
+
+  /** Every neuron of every layer for the latest byte (gated activation x·y). */
+  viz() {
+    return {
+      kind: "neurons",
+      layers: this.neurons.map(toBytes),
+      captions: this.activity.map((a) => `${(a.xy * 100).toFixed(1)}% on`),
+    };
   }
-  return top[k - 1];
 }

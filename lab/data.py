@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 DATA_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 DATA_FILE = DATA_DIR / "tinyshakespeare.txt"
 TRAIN_FRACTION = 0.9
 

@@ -1,10 +1,11 @@
-// Feed tokens through web/bdh/bdh.js and print logits as JSON (used by test_web_parity.py).
-// Usage: node tests/bdh/parity.mjs <model_dir> <comma-separated tokens>
+// Feed tokens through a browser model core and print per-step logits as JSON (used by the parity tests).
+// Usage: node tests/parity.mjs <core module path> <model_dir> <comma-separated tokens>
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { loadModel } from "../../web/bdh/bdh.js";
+import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
-const [dir, tokenList] = process.argv.slice(2);
+const [corePath, dir, tokenList] = process.argv.slice(2);
+const { loadModel } = await import(pathToFileURL(resolve(corePath)).href);
 const manifest = JSON.parse(readFileSync(join(dir, "model.json"), "utf8"));
 const bytes = readFileSync(join(dir, "weights.bin"));
 const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);

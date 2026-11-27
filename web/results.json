@@ -1,0 +1,56 @@
+{
+  "runs": [
+    {
+      "model": "bdh",
+      "preset": "small",
+      "params": 12713984,
+      "steps": 1500,
+      "batch_size": 16,
+      "block_size": 256,
+      "tokens": 6144000,
+      "best_val_bits_per_byte": 2.1983,
+      "best_step": 1500,
+      "train_minutes": 20.3,
+      "hardware": "Apple M4 Pro (mps)"
+    },
+    {
+      "model": "bdh",
+      "preset": "tiny",
+      "params": 1638400,
+      "steps": 300,
+      "batch_size": 16,
+      "block_size": 128,
+      "tokens": 614400,
+      "best_val_bits_per_byte": 2.6606,
+      "best_step": 300,
+      "train_minutes": 0.2,
+      "hardware": "Apple M4 Pro (mps)"
+    },
+    {
+      "model": "nanogpt",
+      "preset": "small",
+      "params": 12618624,
+      "steps": 1500,
+      "batch_size": 16,
+      "block_size": 256,
+      "tokens": 6144000,
+      "best_val_bits_per_byte": 2.8028,
+      "best_step": 1500,
+      "train_minutes": 2.9,
+      "hardware": "Apple M4 Pro (mps)"
+    },
+    {
+      "model": "nanogpt",
+      "preset": "small-long",
+      "params": 12618624,
+      "steps": 10000,
+      "batch_size": 16,
+      "block_size": 256,
+      "tokens": 40960000,
+      "best_val_bits_per_byte": 2.1762,
+      "best_step": 7500,
+      "train_minutes": 18.5,
+      "hardware": "Apple M4 Pro (mps)"
+    }
+  ]
+}

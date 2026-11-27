@@ -6,7 +6,7 @@ BDH_UPSTREAM_URL ?= https://github.com/pathwaycom/bdh
 BDH_UPSTREAM_REF ?= 400e1d23a1f3680297383c2f58b3ec420fa3a2fe
 
 model-setup: vendor/bdh/bdh.py
-	$(PY) -m models.bdh.data
+	$(PY) -m lab.data
 
 vendor/bdh/bdh.py:
 	rm -rf vendor/bdh

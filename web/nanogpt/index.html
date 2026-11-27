@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>nanoGPT Transformer</title>
+  <meta name="description" content="A nanoGPT Transformer trained on Tiny Shakespeare, running entirely in your browser: the baseline for BDH." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+  <link rel="stylesheet" href="../common/style.css" />
+</head>
+<body data-core="./gpt.js">
+  <main>
+    <header>
+      <nav><a href="../">← AI Model Train Lab</a><a href="../bdh/">Compare with BDH →</a></nav>
+      <h1>🤖 nanoGPT — Transformer baseline</h1>
+      <p>
+        A classic GPT-2 style Transformer from <a href="https://github.com/karpathy/nanoGPT">karpathy/nanoGPT</a>,
+        parameter-matched to the BDH demo and trained with the same recipe on Tiny Shakespeare. Every new byte attends
+        over all earlier bytes in its window through a KV cache that grows with the context.
+      </p>
+    </header>
+
+    <div class="layout">
+      <section class="card" aria-labelledby="gen-title">
+        <h2 id="gen-title">Generate</h2>
+        <label for="prompt">Prompt</label>
+        <textarea id="prompt" spellcheck="false">ROMEO:
+</textarea>
+        <div class="chips" id="chips">
+          <button class="chip" data-prompt="ROMEO:&#10;">ROMEO:</button>
+          <button class="chip" data-prompt="JULIET:&#10;">JULIET:</button>
+          <button class="chip" data-prompt="KING RICHARD III:&#10;">KING RICHARD III:</button>
+          <button class="chip" data-prompt="To be or ">To be or</button>
+          <button class="chip" data-prompt="First Citizen:&#10;Before we proceed">First Citizen:</button>
+        </div>
+        <div class="sliders">
+          <div class="slider">
+            <label for="length">Length <output id="length-out">400</output></label>
+            <input id="length" type="range" min="50" max="1500" step="50" value="400" />
+          </div>
+          <div class="slider">
+            <label for="temperature">Temperature <output id="temperature-out">0.8</output></label>
+            <input id="temperature" type="range" min="0" max="1.5" step="0.05" value="0.8" />
+          </div>
+          <div class="slider">
+            <label for="topk">Top-k <output id="topk-out">20</output></label>
+            <input id="topk" type="range" min="1" max="64" step="1" value="20" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="generate" disabled>Generate</button>
+          <button class="secondary" id="stop" disabled>Stop</button>
+          <span class="status" id="status" role="status">Loading model…</span>
+        </div>
+        <div class="progress" id="progress" aria-hidden="true"><div></div></div>
+        <pre class="output" id="output" aria-live="off"></pre>
+      </section>
+
+      <aside class="side">
+        <section class="card" aria-labelledby="stats-title">
+          <h2 id="stats-title">Live</h2>
+          <dl class="stats" id="stats">
+            <div><dt>Speed</dt><dd id="speed">–</dd></div>
+            <div><dt>Context</dt><dd id="position">–</dd></div>
+          </dl>
+          <p class="meta" id="meta"></p>
+        </section>
+        <section class="card" aria-labelledby="viz-title">
+          <h2 id="viz-title">Attention</h2>
+          <div id="viz"></div>
+          <p class="hint">Where the latest byte looks: one row per layer (mean over heads) across the context window, and
+            the last bytes highlighted by their average attention. The window holds 256 bytes; when it fills up, the
+            last 128 are re-encoded.</p>
+        </section>
+      </aside>
+    </div>
+
+    <section class="about card">
+      <div>
+        <h3>Why a baseline?</h3>
+        <p>To judge a new architecture you need a reference trained on the same data with the same budget. This GPT has
+          ~12.6M parameters like the BDH demo and uses the same optimizer, learning rate and batch shape.</p>
+      </div>
+      <div>
+        <h3>What runs here?</h3>
+        <p>Upstream nanoGPT <code>model.py</code>, trained on a laptop and re-implemented in plain JavaScript with a KV
+          cache, verified against the PyTorch forward pass.</p>
+      </div>
+      <div>
+        <h3>Memory, compared</h3>
+        <p>The KV cache grows by ~22 kB per byte (5.5 MB for a full window). BDH keeps a fixed 67 MB state: larger at
+          this context length, but it never grows and has no window limit.</p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../common/app.js"></script>
+</body>
+</html>

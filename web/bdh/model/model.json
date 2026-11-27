@@ -21,6 +21,8 @@
   "step": 1500,
   "val_loss": 1.5237541377544404,
   "params": 12718080,
+  "train_seconds": 1216.3,
+  "device": null,
   "tensors": {
     "decoder": {
       "dtype": "float16",
@@ -75,6 +77,7 @@
       "offset": 25313280
     }
   },
+  "model_name": "bdh",
   "preset": "small",
   "upstream_ref": "400e1d23a1f3680297383c2f58b3ec420fa3a2fe"
 }

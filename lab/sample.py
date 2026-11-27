@@ -1,6 +1,6 @@
-"""Generate text from a trained BDH checkpoint.
+"""Generate text from a trained checkpoint.
 
-Usage: python -m models.bdh.sample --preset small --prompt "ROMEO:" --tokens 400
+Usage: python -m lab.sample --model bdh --preset small --prompt "ROMEO:" --tokens 400
 """
 
 import argparse
@@ -8,15 +8,28 @@ from pathlib import Path
 
 import torch
 
+from .config import TrainConfig
 from .data import decode, encode
 from .device import pick_device
-from .presets import TrainConfig
-from .train import RUNS_DIR, build_model
+from .spec import RUNS_DIR, available_models, load_spec
 
 
-def parse_args() -> argparse.Namespace:
+def load_checkpoint(model_name: str, preset: str | None, checkpoint: Path | None, device):
+    spec = load_spec(model_name)
+    path = checkpoint or RUNS_DIR / model_name / (preset or spec.DEFAULT_PRESET) / "checkpoint.pt"
+    if not path.exists():
+        raise SystemExit(f"No checkpoint at {path}. Train first: make train MODEL={model_name}")
+    state = torch.load(path, map_location=device)
+    config = TrainConfig.from_dict(state["config"])
+    model = spec.build_model(config, device)
+    model.load_state_dict(state["model"])
+    return model.eval(), state, path
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--preset", default="small", help="reads runs/bdh/<preset>/checkpoint.pt")
+    parser.add_argument("--model", required=True, choices=available_models())
+    parser.add_argument("--preset", help="reads runs/<model>/<preset>/checkpoint.pt")
     parser.add_argument("--checkpoint", type=Path, help="explicit checkpoint path (overrides --preset)")
     parser.add_argument("--prompt", default="ROMEO:\n")
     parser.add_argument("--tokens", type=int, default=400, help="number of bytes to generate")
@@ -25,23 +38,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-samples", type=int, default=1)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--device", default="auto")
-    return parser.parse_args()
+    args = parser.parse_args()
 
-
-def main() -> None:
-    args = parse_args()
-    path = args.checkpoint or RUNS_DIR / args.preset / "checkpoint.pt"
-    if not path.exists():
-        raise SystemExit(f"No checkpoint at {path}. Train first: make train MODEL=bdh PRESET={args.preset}")
     if args.seed is not None:
         torch.manual_seed(args.seed)
-
     device = pick_device(args.device)
-    state = torch.load(path, map_location=device)
-    config = TrainConfig.from_dict(state["config"])
-    model = build_model(config, device)
-    model.load_state_dict(state["model"])
-    model.eval()
+    model, state, path = load_checkpoint(args.model, args.preset, args.checkpoint, device)
     print(f"Loaded {path} (step {state['step']}, val loss {state['val_loss']})\n")
 
     prompt = torch.tensor([encode(args.prompt)], dtype=torch.long, device=device)
