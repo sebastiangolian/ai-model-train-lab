@@ -1,0 +1,80 @@
+{
+  "config": {
+    "n_layer": 4,
+    "n_embd": 256,
+    "n_head": 4,
+    "mlp_internal_dim_multiplier": 64,
+    "dropout": 0.1,
+    "vocab_size": 256
+  },
+  "training": {
+    "block_size": 256,
+    "batch_size": 16,
+    "max_iters": 1500,
+    "learning_rate": 0.001,
+    "weight_decay": 0.1,
+    "log_interval": 50,
+    "eval_interval": 250,
+    "eval_iters": 20,
+    "seed": 1337
+  },
+  "step": 1500,
+  "val_loss": 1.5237541377544404,
+  "params": 12718080,
+  "tensors": {
+    "decoder": {
+      "dtype": "float16",
+      "shape": [
+        16384,
+        256
+      ],
+      "offset": 0
+    },
+    "encoder": {
+      "dtype": "float16",
+      "shape": [
+        4,
+        256,
+        4096
+      ],
+      "offset": 8388608
+    },
+    "encoder_v": {
+      "dtype": "float16",
+      "shape": [
+        4,
+        256,
+        4096
+      ],
+      "offset": 16777216
+    },
+    "lm_head": {
+      "dtype": "float16",
+      "shape": [
+        256,
+        256
+      ],
+      "offset": 25165824
+    },
+    "attn.freqs": {
+      "dtype": "float32",
+      "shape": [
+        1,
+        1,
+        1,
+        4096
+      ],
+      "offset": 25296896
+    },
+    "embed.weight": {
+      "dtype": "float16",
+      "shape": [
+        256,
+        256
+      ],
+      "offset": 25313280
+    }
+  },
+  "preset": "small",
+  "upstream_ref": "400e1d23a1f3680297383c2f58b3ec420fa3a2fe"
+}

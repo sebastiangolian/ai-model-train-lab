@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Model Train Lab</title>
+  <meta name="description" content="Small AI models trained from scratch on a laptop and run in the browser." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>" />
+  <style>
+    :root {
+      --bg: #f6f5f1; --surface: #ffffff; --text: #1d1b16; --muted: #6b665b; --border: #dedad0;
+      --accent: #c2410c; --tag: #efede7; --radius: 10px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #14130f; --surface: #1d1c17; --text: #ece8dd; --muted: #a29c8d; --border: #34322a; --accent: #f97316; --tag: #26241e; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 880px; margin: 0 auto; padding: 40px 16px 56px; }
+    h1 { margin: 0; font-size: 28px; letter-spacing: -0.01em; }
+    header p { margin: 8px 0 0; color: var(--muted); max-width: 64ch; }
+    .models { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 14px; }
+    .model a { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+    .model a:hover, .model a:focus-visible { border-color: var(--accent); outline: none; }
+    .model h2 { margin: 0; font-size: 18px; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+    .model h2 span { font-size: 13px; font-weight: 500; color: var(--accent); }
+    .model p { margin: 6px 0 10px; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tags li { list-style: none; font: 12px ui-monospace, "SF Mono", Menlo, monospace; background: var(--tag); padding: 2px 8px; border-radius: 999px; }
+    .tags { padding: 0; margin: 0; }
+    footer { margin-top: 32px; font-size: 13px; color: var(--muted); }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>🧪 AI Model Train Lab</h1>
+      <p>New AI architectures, trained from scratch on a laptop and run entirely in your browser — to see how they
+        behave from the inside, not just read the claims.</p>
+    </header>
+    <ul class="models">
+      <li class="model">
+        <a href="bdh/">
+          <h2>🐉 BDH — Dragon Hatchling <span>Open demo →</span></h2>
+          <p>Pathway's post-Transformer architecture: sparse, positive neuron activations and a fixed-size synaptic
+            memory instead of a KV cache. Byte-level model trained on Tiny Shakespeare.</p>
+          <ul class="tags"><li>language model</li><li>12.7M params</li><li>linear attention</li><li>Pathway, 2025</li></ul>
+        </a>
+      </li>
+    </ul>
+    <footer>Training code and Makefile pipeline: one folder per model under <code>models/</code>.</footer>
+  </main>
+</body>
+</html>
