@@ -1,0 +1,7 @@
+# Normalize line endings for text files
+* text=auto eol=lf
+
+# Exported model weights are binary: no diffs, no line-ending conversion
+*.bin binary
+*.pt binary
+*.safetensors binary
